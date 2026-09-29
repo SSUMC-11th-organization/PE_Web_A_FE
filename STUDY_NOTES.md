@@ -1,6 +1,6 @@
-# PE_Web_A 스터디 유의사항 정리
+# PE_Web_A_FE 스터디 유의사항 정리
 
-> 출처: [SSUMC-11th-organization/PE_Web_A README](https://github.com/SSUMC-11th-organization/PE_Web_A)
+> 출처: [SSUMC-11th-organization/PE_Web_A_FE README](https://github.com/SSUMC-11th-organization/PE_Web_A_FE)
 
 ## ⭐️ 스터디 규칙
 
