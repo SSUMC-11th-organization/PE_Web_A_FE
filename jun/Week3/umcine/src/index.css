@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: system-ui, "Segoe UI", Roboto, sans-serif;
+
+  --color-page: #f6f7f9;
+  --color-surface-hover: #f0f0f3;
+  --color-text: #131316;
+  --color-sub: #4b4b53;
+  --color-muted: #8b8b93;
+  --color-border: #e6e6ea;
+  --color-accent: #2563eb;
+  --color-accent-bg: rgb(37 99 235 / 0.1);
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+    line-height: 1.45;
+    color: var(--color-text);
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  #root {
+    display: flex;
+    flex-direction: column;
+    min-height: 100svh;
+    background: var(--color-page);
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-weight: 600;
+  }
+
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+}
