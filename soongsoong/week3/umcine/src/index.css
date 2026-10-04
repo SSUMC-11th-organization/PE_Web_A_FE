@@ -1,0 +1,27 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+
+  --color-primary: #1f66f5;
+  --color-ink: #111827;
+  --color-ink-sub: #6b7280;
+  --color-ink-muted: #9ca3af;
+  --color-line: #e5e7eb;
+  --color-canvas: #f5f6f8;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Tailwind 기본 스타일은 버튼 커서를 default로 두어서, 눌리는 버튼은 pointer로 바꿔요. */
+  button:not(:disabled) {
+    cursor: pointer;
+  }
+}
