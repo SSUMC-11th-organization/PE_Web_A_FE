@@ -1,6 +1,7 @@
 import { Link, useParams } from "@tanstack/react-router";
 import { useState, type SubmitEvent } from "react";
 import { movies } from "../../data/movies";
+import { useBookmarkStore } from "../../stores/bookmark-store";
 import type { Movie } from "../../types/movie";
 import { cn } from "../../utils/cn";
 
@@ -21,12 +22,15 @@ export function MovieDetailPage() {
     );
   }
 
-  // 다른 영화로 이동하면 즐겨찾기와 평점 상태를 초기화해요.
+  // 다른 영화로 이동하면 평점 상태를 초기화해요.
   return <MovieDetail key={movie.id} movie={movie} />;
 }
 
 function MovieDetail({ movie }: { movie: Movie }) {
-  const [isBookmarked, setIsBookmarked] = useState(movie.isBookmarked);
+  const isBookmarked = useBookmarkStore((state) =>
+    state.bookmarkedMovieIds.includes(movie.id),
+  );
+  const toggleBookmark = useBookmarkStore((state) => state.toggleBookmark);
   const [rating, setRating] = useState(0);
   const [review, setReview] = useState("");
 
@@ -82,7 +86,7 @@ function MovieDetail({ movie }: { movie: Movie }) {
             <button
               type="button"
               aria-pressed={isBookmarked}
-              onClick={() => setIsBookmarked((prev) => !prev)}
+              onClick={() => toggleBookmark(movie.id)}
               className={cn(
                 "mt-2 flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-semibold text-white transition-[background-color,filter] duration-200 ease-in-out hover:brightness-92",
                 isBookmarked ? "bg-text" : "bg-accent",

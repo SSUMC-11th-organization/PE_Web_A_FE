@@ -1,6 +1,7 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { useState, type SubmitEvent } from "react";
 import { movies } from "../../data/movies";
+import { useBookmarkStore } from "../../stores/bookmark-store";
 import type { Movie } from "../../types/movie";
 import { cn } from "../../utils/cn";
 
@@ -112,6 +113,11 @@ export function SearchPage() {
 }
 
 function SearchResultItem({ movie }: { movie: Movie }) {
+  const isBookmarked = useBookmarkStore((state) =>
+    state.bookmarkedMovieIds.includes(movie.id),
+  );
+  const toggleBookmark = useBookmarkStore((state) => state.toggleBookmark);
+
   return (
     <li className="flex gap-5 border-b border-border py-6">
       <Link
@@ -134,13 +140,23 @@ function SearchResultItem({ movie }: { movie: Movie }) {
         <p className="line-clamp-2 text-[13px] leading-relaxed text-sub">
           {movie.overview}
         </p>
-        <Link
-          to="/movies/$movieId"
-          params={{ movieId: String(movie.id) }}
-          className="mt-2 text-xs font-semibold text-accent hover:underline"
-        >
-          상세 보기 →
-        </Link>
+        <div className="mt-2 flex items-center gap-4">
+          <Link
+            to="/movies/$movieId"
+            params={{ movieId: String(movie.id) }}
+            className="text-xs font-semibold text-accent hover:underline"
+          >
+            상세 보기 →
+          </Link>
+          <button
+            type="button"
+            aria-pressed={isBookmarked}
+            onClick={() => toggleBookmark(movie.id)}
+            className="text-xs font-semibold text-sub hover:underline"
+          >
+            {isBookmarked ? "북마크 해제" : "북마크 추가"}
+          </button>
+        </div>
       </div>
     </li>
   );

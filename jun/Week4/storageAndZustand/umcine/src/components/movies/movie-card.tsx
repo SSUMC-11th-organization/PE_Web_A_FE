@@ -1,14 +1,18 @@
 import { Link } from "@tanstack/react-router";
 import type { Movie } from "../../types/movie";
+import { useBookmarkStore } from "../../stores/bookmark-store";
 import { cn } from "../../utils/cn";
 
 interface MovieCardProps {
   movie: Movie;
-  onToggleBookmark: (id: number) => void;
 }
 
-export default function MovieCard({ movie, onToggleBookmark }: MovieCardProps) {
-  const bookmarkIcon = movie.isBookmarked
+export default function MovieCard({ movie }: MovieCardProps) {
+  const isBookmarked = useBookmarkStore((state) =>
+    state.bookmarkedMovieIds.includes(movie.id),
+  );
+  const toggleBookmark = useBookmarkStore((state) => state.toggleBookmark);
+  const bookmarkIcon = isBookmarked
     ? "/icons/bookmark.svg"
     : "/icons/bookmark-outline.svg";
 
@@ -37,11 +41,11 @@ export default function MovieCard({ movie, onToggleBookmark }: MovieCardProps) {
         type="button"
         className={cn(
           "absolute top-2 right-2 flex size-[30px] items-center justify-center rounded-[7px] backdrop-blur-[2px] transition-[background-color,transform] duration-150 ease-in-out hover:scale-106",
-          movie.isBookmarked ? "bg-accent" : "bg-text/55",
+          isBookmarked ? "bg-accent" : "bg-text/55",
         )}
-        aria-pressed={movie.isBookmarked}
-        aria-label={movie.isBookmarked ? "북마크 해제" : "북마크 추가"}
-        onClick={() => onToggleBookmark(movie.id)}
+        aria-pressed={isBookmarked}
+        aria-label={isBookmarked ? "북마크 해제" : "북마크 추가"}
+        onClick={() => toggleBookmark(movie.id)}
       >
         <img src={bookmarkIcon} alt="" className="size-[15px] invert" />
       </button>
