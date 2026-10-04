@@ -1,0 +1,105 @@
+.movie-card {
+  min-width: 0;
+}
+
+.poster-wrap {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 2 / 3;
+  border-radius: 12px;
+  background: #1d1d22;
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.28);
+}
+
+.movie-poster {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 240ms ease;
+}
+
+.movie-card:hover .movie-poster {
+  transform: scale(1.035);
+}
+
+.poster-wrap::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.18), transparent 34%);
+  content: "";
+  pointer-events: none;
+}
+
+.bookmark-button {
+  position: absolute;
+  z-index: 2;
+  top: 13px;
+  right: 13px;
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  background: rgba(13, 13, 16, 0.68);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.bookmark-button:hover {
+  transform: translateY(-2px);
+  background: rgba(13, 13, 16, 0.9);
+}
+
+.bookmark-button.selected {
+  border-color: rgba(124, 92, 255, 0.7);
+  background: #7152ef;
+}
+
+.bookmark-button img {
+  width: 22px;
+  height: 22px;
+  filter: brightness(0) invert(1);
+}
+
+.movie-info {
+  padding: 16px 2px 0;
+}
+
+.movie-info h3 {
+  overflow: hidden;
+  margin: 0;
+  color: #f7f7f8;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.original-title {
+  overflow: hidden;
+  margin: 5px 0 0;
+  color: #8a8a92;
+  font-size: 13px;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.movie-meta {
+  display: flex;
+  overflow: hidden;
+  gap: 7px;
+  margin: 9px 0 0;
+  color: #b5b5bb;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.movie-meta span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
