@@ -2,6 +2,7 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useState, type SubmitEvent } from "react";
 import { MovieGrid } from "../../components/movies/movie-grid";
 import { movies } from "../../data/movies";
+import { useBookmarkStore } from "../../stores/bookmark-store";
 
 export function SearchPage() {
   const { query } = useSearch({ from: "/search" });
@@ -15,13 +16,18 @@ export function SearchPage() {
     setSearchText(query ?? "");
   }
 
+  const bookmarkedMovieIds = useBookmarkStore((state) => state.bookmarkedMovieIds);
+  const toggleBookmark = useBookmarkStore((state) => state.toggleBookmark);
+
   const normalizedQuery = query?.trim().toLowerCase() ?? "";
   const searchResults = normalizedQuery
-    ? movies.filter(
-        (movie) =>
-          movie.title.toLowerCase().includes(normalizedQuery) ||
-          movie.originalTitle.toLowerCase().includes(normalizedQuery),
-      )
+    ? movies
+        .filter(
+          (movie) =>
+            movie.title.toLowerCase().includes(normalizedQuery) ||
+            movie.originalTitle.toLowerCase().includes(normalizedQuery),
+        )
+        .map((movie) => ({ ...movie, isBookmarked: bookmarkedMovieIds.includes(movie.id) }))
     : [];
 
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
@@ -66,7 +72,7 @@ export function SearchPage() {
             ‘{query}’ 검색 결과 {searchResults.length}편
           </h2>
           {searchResults.length > 0 ? (
-            <MovieGrid movies={searchResults} showDetails />
+            <MovieGrid movies={searchResults} onToggleBookmark={toggleBookmark} showDetails />
           ) : (
             <p className="py-10 text-center text-sm leading-normal text-ink-sub">검색 결과가 없어요.</p>
           )}

@@ -1,11 +1,16 @@
 import { Link, useParams } from "@tanstack/react-router";
 import { movies } from "../../data/movies";
+import { useBookmarkStore } from "../../stores/bookmark-store";
 
 const STARS = [1, 2, 3, 4, 5];
 
 export function MovieDetailPage() {
   const { movieId } = useParams({ from: "/movies/$movieId" });
   const movie = movies.find((item) => item.id === Number(movieId));
+  const isBookmarked = useBookmarkStore((state) =>
+    state.bookmarkedMovieIds.includes(Number(movieId)),
+  );
+  const toggleBookmark = useBookmarkStore((state) => state.toggleBookmark);
 
   if (!movie) {
     return (
@@ -28,7 +33,6 @@ export function MovieDetailPage() {
     backdropPath,
     tagline,
     overview,
-    isBookmarked,
   } = movie;
 
   return (
@@ -75,6 +79,8 @@ export function MovieDetailPage() {
           <button
             className="mt-4 flex h-10 items-center gap-1.5 rounded-md bg-primary pr-4 pl-3.5 text-[13px] font-bold text-white"
             type="button"
+            aria-pressed={isBookmarked}
+            onClick={() => toggleBookmark(movie.id)}
           >
             <img
               className="size-5 invert"
