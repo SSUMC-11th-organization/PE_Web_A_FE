@@ -2,6 +2,8 @@ import { Link } from "@tanstack/react-router";
 import { useState, type ReactNode, type SubmitEvent } from "react";
 import { checkEmailDuplicate } from "../../api/members/check-email-duplicate";
 import { checkNicknameDuplicate } from "../../api/members/check-nickname-duplicate";
+import { signup } from "../../api/members/signup";
+// import { useNavigate } from "@tanstack/react-router";
 import { cn } from "../../utils/cn";
 
 // 이메일 형식 검사
@@ -108,11 +110,30 @@ export function SignupPage() {
     }
   };
 
-  const handleSubmit = (e: SubmitEvent<HTMLFormElement>) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  // const navigate = useNavigate();
+
+  const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     // 폼 제출 시 페이지 새로고침 방지
     e.preventDefault();
+    if (!canSubmit || isSubmitting) return;
 
-    // 3.4에서 회원가입 API 요청 추가
+    setIsSubmitting(true);
+    try {
+      // passwordConfirm은 화면에서만 검사하므로 요청에 포함하지 않아요.
+      const response = await signup({
+        email: form.email.trim(),
+        nickname: form.nickname.trim(),
+        password: form.password,
+      });
+      alert(response.message);
+      // 로그인 페이지 연결 후 주석 해제
+      // navigate({ to: "/login" });
+    } catch {
+      alert("회원가입에 실패했어요. 다시 시도해 주세요.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -235,10 +256,10 @@ export function SignupPage() {
 
           <button
             type="submit"
-            disabled={!canSubmit}
+            disabled={!canSubmit || isSubmitting}
             className="mt-5 h-12 rounded-lg bg-accent text-[15px] font-semibold text-white transition-[filter,opacity] duration-200 ease-in-out hover:brightness-92 disabled:opacity-40 disabled:hover:brightness-100"
           >
-            가입하기
+            {isSubmitting ? "가입 중" : "가입하기"}
           </button>
         </form>
 
