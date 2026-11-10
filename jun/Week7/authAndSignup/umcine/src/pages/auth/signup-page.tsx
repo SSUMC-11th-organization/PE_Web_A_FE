@@ -1,5 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useState, type ReactNode, type SubmitEvent } from "react";
+import { checkEmailDuplicate } from "../../api/members/check-email-duplicate";
+import { checkNicknameDuplicate } from "../../api/members/check-nickname-duplicate";
 import { cn } from "../../utils/cn";
 
 // 이메일 형식 검사
@@ -17,6 +19,13 @@ const DEFAULT_FORM = {
 
 type DefaultFormKey = keyof typeof DEFAULT_FORM;
 type DefaultFormValue = (typeof DEFAULT_FORM)[DefaultFormKey];
+
+const DEFAULT_DUPLICATE_CHECK = {
+  isChecking: false,
+  isAvailable: false,
+};
+
+type DuplicateCheckKey = "email" | "nickname";
 
 export function SignupPage() {
   const [form, setForm] = useState(DEFAULT_FORM);
@@ -40,8 +49,63 @@ export function SignupPage() {
   const isFormValid =
     isEmailValid && isNicknameValid && isPasswordValid && isPasswordConfirmValid;
 
+  const [duplicateCheck, setDuplicateCheck] = useState({
+    email: DEFAULT_DUPLICATE_CHECK,
+    nickname: DEFAULT_DUPLICATE_CHECK,
+  });
+
+  // 입력 조건과 두 중복 확인을 모두 통과해야 제출 가능
+  const canSubmit =
+    isFormValid &&
+    duplicateCheck.email.isAvailable &&
+    duplicateCheck.nickname.isAvailable;
+
   const handleChangeField = (key: DefaultFormKey, value: DefaultFormValue) => {
+    if (key === "email" || key === "nickname") {
+      if (duplicateCheck[key].isChecking) return;
+      // 확인한 값을 바꾸면 다시 중복 확인해야 함
+      setDuplicateCheck((prev) => ({ ...prev, [key]: DEFAULT_DUPLICATE_CHECK }));
+    }
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleCheckDuplicate = async (key: DuplicateCheckKey) => {
+    const isValid = key === "email" ? isEmailValid : isNicknameValid;
+    if (!isValid || duplicateCheck[key].isChecking) return;
+
+    const label = key === "email" ? "이메일" : "닉네임";
+    setDuplicateCheck((prev) => ({
+      ...prev,
+      [key]: { isChecking: true, isAvailable: false },
+    }));
+
+    try {
+      const response =
+        key === "email"
+          ? await checkEmailDuplicate(form.email.trim())
+          : await checkNicknameDuplicate(form.nickname.trim());
+      const isAvailable = response.available;
+      setDuplicateCheck((prev) => ({
+        ...prev,
+        [key]: { ...prev[key], isAvailable },
+      }));
+      alert(
+        isAvailable
+          ? `사용할 수 있는 ${label}이에요.`
+          : `이미 사용 중인 ${label}이에요.`,
+      );
+    } catch {
+      setDuplicateCheck((prev) => ({
+        ...prev,
+        [key]: { ...prev[key], isAvailable: false },
+      }));
+      alert("중복 확인에 실패했어요. 다시 시도해 주세요.");
+    } finally {
+      setDuplicateCheck((prev) => ({
+        ...prev,
+        [key]: { ...prev[key], isChecking: false },
+      }));
+    }
   };
 
   const handleSubmit = (e: SubmitEvent<HTMLFormElement>) => {
@@ -69,10 +133,11 @@ export function SignupPage() {
               action={
                 <button
                   type="button"
-                  disabled={!isEmailValid}
+                  disabled={!isEmailValid || duplicateCheck.email.isChecking}
+                  onClick={() => handleCheckDuplicate("email")}
                   className={actionButtonClassName}
                 >
-                  중복 확인
+                  {duplicateCheck.email.isChecking ? "확인 중" : "중복 확인"}
                 </button>
               }
             >
@@ -83,6 +148,7 @@ export function SignupPage() {
                 placeholder="name@example.com"
                 value={form.email}
                 onChange={(e) => handleChangeField("email", e.target.value)}
+                disabled={duplicateCheck.email.isChecking}
                 aria-invalid={showEmailError}
                 aria-describedby={showEmailError ? "email-message" : undefined}
                 className={inputClassName}
@@ -101,10 +167,11 @@ export function SignupPage() {
               action={
                 <button
                   type="button"
-                  disabled={!isNicknameValid}
+                  disabled={!isNicknameValid || duplicateCheck.nickname.isChecking}
+                  onClick={() => handleCheckDuplicate("nickname")}
                   className={actionButtonClassName}
                 >
-                  중복 확인
+                  {duplicateCheck.nickname.isChecking ? "확인 중" : "중복 확인"}
                 </button>
               }
             >
@@ -115,6 +182,7 @@ export function SignupPage() {
                 placeholder="2~12자"
                 value={form.nickname}
                 onChange={(e) => handleChangeField("nickname", e.target.value)}
+                disabled={duplicateCheck.nickname.isChecking}
                 aria-invalid={showNicknameError}
                 aria-describedby={showNicknameError ? "nickname-message" : undefined}
                 className={inputClassName}
@@ -167,7 +235,7 @@ export function SignupPage() {
 
           <button
             type="submit"
-            disabled={!isFormValid}
+            disabled={!canSubmit}
             className="mt-5 h-12 rounded-lg bg-accent text-[15px] font-semibold text-white transition-[filter,opacity] duration-200 ease-in-out hover:brightness-92 disabled:opacity-40 disabled:hover:brightness-100"
           >
             가입하기
@@ -187,7 +255,7 @@ export function SignupPage() {
 }
 
 const inputClassName =
-  "h-full w-full min-w-0 bg-transparent text-[15px] text-text outline-none placeholder:text-muted";
+  "h-full w-full min-w-0 bg-transparent text-[15px] text-text outline-none placeholder:text-muted disabled:text-muted";
 
 const actionButtonClassName =
   "shrink-0 px-1 text-[13px] font-semibold text-accent transition-opacity hover:opacity-70 disabled:text-muted disabled:hover:opacity-100";
