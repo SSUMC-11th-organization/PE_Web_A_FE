@@ -13,7 +13,11 @@ const NAV_ITEMS = [
     to: "/search",
     isActive: (pathname: string) => pathname.startsWith("/search"),
   },
-  { label: "내 정보", to: "/", isActive: () => false },
+  {
+    label: "내 정보",
+    to: "/me",
+    isActive: (pathname: string) => pathname.startsWith("/me"),
+  },
 ] as const;
 
 export function Header() {
@@ -62,12 +66,13 @@ export function Header() {
         >
           <img src="/icons/search.svg" alt="" className="size-[18px] opacity-70" />
         </Link>
-        <button
-          type="button"
+        {/* 로그인 상태 관리는 8주차에 추가해요. 로그인하면 "마이페이지" 버튼으로 바뀌어요. */}
+        <Link
+          to="/login"
           className="rounded-lg bg-accent px-[18px] py-[9px] text-sm font-semibold text-white transition-[filter] duration-200 ease-in-out hover:brightness-92"
         >
           로그인
-        </button>
+        </Link>
       </div>
     </header>
   );

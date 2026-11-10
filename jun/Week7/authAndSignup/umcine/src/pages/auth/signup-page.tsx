@@ -1,10 +1,14 @@
-import { Link } from "@tanstack/react-router";
-import { useState, type ReactNode, type SubmitEvent } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useState, type SubmitEvent } from "react";
 import { checkEmailDuplicate } from "../../api/members/check-email-duplicate";
 import { checkNicknameDuplicate } from "../../api/members/check-nickname-duplicate";
 import { signup } from "../../api/members/signup";
-// import { useNavigate } from "@tanstack/react-router";
-import { cn } from "../../utils/cn";
+import {
+  FormField,
+  formActionButtonClassName,
+  formInputClassName,
+  formSubmitButtonClassName,
+} from "../../components/auth/form-field";
 
 // 이메일 형식 검사
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -111,7 +115,7 @@ export function SignupPage() {
   };
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     // 폼 제출 시 페이지 새로고침 방지
@@ -127,8 +131,7 @@ export function SignupPage() {
         password: form.password,
       });
       alert(response.message);
-      // 로그인 페이지 연결 후 주석 해제
-      // navigate({ to: "/login" });
+      navigate({ to: "/login" });
     } catch {
       alert("회원가입에 실패했어요. 다시 시도해 주세요.");
     } finally {
@@ -156,7 +159,7 @@ export function SignupPage() {
                   type="button"
                   disabled={!isEmailValid || duplicateCheck.email.isChecking}
                   onClick={() => handleCheckDuplicate("email")}
-                  className={actionButtonClassName}
+                  className={formActionButtonClassName}
                 >
                   {duplicateCheck.email.isChecking ? "확인 중" : "중복 확인"}
                 </button>
@@ -172,7 +175,7 @@ export function SignupPage() {
                 disabled={duplicateCheck.email.isChecking}
                 aria-invalid={showEmailError}
                 aria-describedby={showEmailError ? "email-message" : undefined}
-                className={inputClassName}
+                className={formInputClassName}
               />
             </FormField>
 
@@ -190,7 +193,7 @@ export function SignupPage() {
                   type="button"
                   disabled={!isNicknameValid || duplicateCheck.nickname.isChecking}
                   onClick={() => handleCheckDuplicate("nickname")}
-                  className={actionButtonClassName}
+                  className={formActionButtonClassName}
                 >
                   {duplicateCheck.nickname.isChecking ? "확인 중" : "중복 확인"}
                 </button>
@@ -206,7 +209,7 @@ export function SignupPage() {
                 disabled={duplicateCheck.nickname.isChecking}
                 aria-invalid={showNicknameError}
                 aria-describedby={showNicknameError ? "nickname-message" : undefined}
-                className={inputClassName}
+                className={formInputClassName}
               />
             </FormField>
 
@@ -226,7 +229,7 @@ export function SignupPage() {
                 onChange={(e) => handleChangeField("password", e.target.value)}
                 aria-invalid={showPasswordError}
                 aria-describedby="password-message"
-                className={inputClassName}
+                className={formInputClassName}
               />
             </FormField>
 
@@ -249,7 +252,7 @@ export function SignupPage() {
                 aria-describedby={
                   showPasswordConfirmError ? "passwordConfirm-message" : undefined
                 }
-                className={inputClassName}
+                className={formInputClassName}
               />
             </FormField>
           </div>
@@ -257,7 +260,7 @@ export function SignupPage() {
           <button
             type="submit"
             disabled={!canSubmit || isSubmitting}
-            className="mt-5 h-12 rounded-lg bg-accent text-[15px] font-semibold text-white transition-[filter,opacity] duration-200 ease-in-out hover:brightness-92 disabled:opacity-40 disabled:hover:brightness-100"
+            className={`mt-5 ${formSubmitButtonClassName}`}
           >
             {isSubmitting ? "가입 중" : "가입하기"}
           </button>
@@ -265,56 +268,11 @@ export function SignupPage() {
 
         <p className="mt-4 text-center text-sm text-muted">
           이미 계정이 있나요?{" "}
-          {/* 로그인 페이지는 필수 미션에서 만들고 연결해요. */}
-          <Link to="/" className="font-semibold text-accent hover:underline">
+          <Link to="/login" className="font-semibold text-accent hover:underline">
             로그인
           </Link>
         </p>
       </div>
     </main>
-  );
-}
-
-const inputClassName =
-  "h-full w-full min-w-0 bg-transparent text-[15px] text-text outline-none placeholder:text-muted disabled:text-muted";
-
-const actionButtonClassName =
-  "shrink-0 px-1 text-[13px] font-semibold text-accent transition-opacity hover:opacity-70 disabled:text-muted disabled:hover:opacity-100";
-
-interface FormFieldProps {
-  id: string;
-  label: string;
-  isError?: boolean;
-  message?: string;
-  action?: ReactNode;
-  children: ReactNode;
-}
-
-function FormField({ id, label, isError, message, action, children }: FormFieldProps) {
-  return (
-    <div className="flex flex-col gap-2">
-      <label htmlFor={id} className="text-sm font-semibold text-text">
-        {label}
-      </label>
-      <div
-        className={cn(
-          "flex h-12 items-center gap-2 rounded-lg border bg-white px-4 transition-colors",
-          isError
-            ? "border-red-500"
-            : "border-border focus-within:border-accent",
-        )}
-      >
-        {children}
-        {action}
-      </div>
-      {message && (
-        <p
-          id={`${id}-message`}
-          className={cn("text-xs", isError ? "text-red-500" : "text-muted")}
-        >
-          {message}
-        </p>
-      )}
-    </div>
   );
 }
