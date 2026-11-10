@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# TanStack Router 플러그인 임시 파일
+.tanstack
