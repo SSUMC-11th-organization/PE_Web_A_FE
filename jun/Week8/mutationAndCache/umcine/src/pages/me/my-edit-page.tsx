@@ -1,24 +1,45 @@
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
-import { useState, type ChangeEvent, type SubmitEvent } from "react";
+import { useState, type SubmitEvent } from "react";
 import { checkNicknameDuplicate } from "../../api/members/check-nickname-duplicate";
+import type { MemberInfo } from "../../api/members/me";
 import {
   FormField,
   formActionButtonClassName,
   formInputClassName,
 } from "../../components/auth/form-field";
 import { ProfileAvatar } from "../../components/me/profile-avatar";
-import { useMeStore } from "../../stores/me-store";
-
-const MAX_PROFILE_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
+import { useUpdateMeMutation } from "../../hooks/use-update-me-mutation";
+import { meQueryOptions } from "../../queries/me-query";
 
 export function MyEditPage() {
+  const meQuery = useQuery(meQueryOptions);
+
+  if (meQuery.isPending) {
+    return <EditStatus message="내 정보를 불러오는 중이에요." />;
+  }
+
+  if (meQuery.isError) {
+    return <EditStatus message="내 정보를 불러오지 못했어요." />;
+  }
+
+  // 수정에 성공해 캐시의 닉네임이 바뀌면 폼을 새 값으로 다시 시작해요.
+  return <MyEditForm key={meQuery.data.nickname} profile={meQuery.data} />;
+}
+
+function EditStatus({ message }: { message: string }) {
+  return (
+    <main className="flex flex-1 items-center justify-center p-10 text-sm text-muted">
+      {message}
+    </main>
+  );
+}
+
+function MyEditForm({ profile }: { profile: MemberInfo }) {
   const navigate = useNavigate();
-  const profile = useMeStore((state) => state.profile);
-  const updateProfile = useMeStore((state) => state.updateProfile);
+  const updateMeMutation = useUpdateMeMutation();
 
   const [nickname, setNickname] = useState(profile.nickname);
-  const [profileImageUrl, setProfileImageUrl] = useState(profile.profileImageUrl);
-  const [imageError, setImageError] = useState<string | null>(null);
   const [nicknameCheck, setNicknameCheck] = useState({
     isChecking: false,
     isAvailable: false,
@@ -27,14 +48,10 @@ export function MyEditPage() {
   const trimmedNickname = nickname.trim();
   const isNicknameValid = trimmedNickname.length >= 2 && trimmedNickname.length <= 12;
   const isNicknameChanged = trimmedNickname !== profile.nickname;
-  const isImageChanged = profileImageUrl !== profile.profileImageUrl;
   const showNicknameError = nickname.length > 0 && !isNicknameValid;
 
-  // 닉네임을 바꿨다면 중복 확인까지 통과해야 저장할 수 있어요.
-  const canSave =
-    (isNicknameChanged || isImageChanged) &&
-    isNicknameValid &&
-    (!isNicknameChanged || nicknameCheck.isAvailable);
+  // 닉네임을 바꾸고 중복 확인까지 통과해야 저장할 수 있어요.
+  const canSave = isNicknameChanged && isNicknameValid && nicknameCheck.isAvailable;
 
   const handleChangeNickname = (value: string) => {
     if (nicknameCheck.isChecking) return;
@@ -56,37 +73,15 @@ export function MyEditPage() {
     }
   };
 
-  const handleChangeImage = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    // 같은 파일을 다시 골라도 change 이벤트가 발생하도록 값을 비워요.
-    e.target.value = "";
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      setImageError("이미지 파일만 올릴 수 있어요.");
-      return;
-    }
-    if (file.size > MAX_PROFILE_IMAGE_SIZE) {
-      setImageError("5MB 이하의 이미지만 올릴 수 있어요.");
-      return;
-    }
-
-    // 미리보기용으로 파일을 data URL로 읽어요. 실제 업로드는 8주차에 연결해요.
-    const reader = new FileReader();
-    reader.onload = () => {
-      setImageError(null);
-      setProfileImageUrl(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  };
-
   const handleSubmit = (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!canSave) return;
+    if (!canSave || updateMeMutation.isPending) return;
 
-    // 8주차에서 내 정보 수정 API 요청으로 바꿔요.
-    updateProfile({ nickname: trimmedNickname, profileImageUrl });
-    navigate({ to: "/me" });
+    updateMeMutation.mutate(
+      { nickname: trimmedNickname },
+      // 캐시는 훅의 onSuccess에서 바뀌므로, 이 화면에서는 이동만 해요.
+      { onSuccess: () => navigate({ to: "/me" }) },
+    );
   };
 
   return (
@@ -95,36 +90,22 @@ export function MyEditPage() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-[28px] font-bold tracking-[-0.3px]">내 정보 수정</h1>
-            <p className="mt-1 text-sm text-muted">
-              닉네임과 프로필 이미지만 변경할 수 있어요.
-            </p>
+            <p className="mt-1 text-sm text-muted">닉네임만 변경할 수 있어요.</p>
           </div>
           <button
             type="submit"
-            disabled={!canSave}
+            disabled={!canSave || updateMeMutation.isPending}
             className="shrink-0 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-[filter,opacity] duration-200 ease-in-out hover:brightness-92 disabled:opacity-40 disabled:hover:brightness-100"
           >
-            변경사항 저장
+            {updateMeMutation.isPending ? "저장 중" : "변경사항 저장"}
           </button>
         </div>
 
         <div className="mt-8 grid gap-10 md:grid-cols-2">
           <div className="flex flex-col items-center gap-2">
-            <label className="relative cursor-pointer" aria-label="프로필 이미지 변경">
-              <ProfileAvatar imageUrl={profileImageUrl} className="size-20" />
-              <span className="absolute right-0 bottom-0 flex size-6 items-center justify-center rounded-full bg-white">
-                <img src="/icons/edit.svg" alt="" className="size-6" />
-              </span>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleChangeImage}
-                className="sr-only"
-              />
-            </label>
+            {/* 내 정보 API에 프로필 이미지가 없어서 기본 이미지를 보여줘요. */}
+            <ProfileAvatar imageUrl={null} className="size-20" />
             <p className="text-sm font-bold text-text">프로필 이미지</p>
-            <p className="text-xs text-muted">선택 사항 · 최대 5MB</p>
-            {imageError && <p className="text-xs text-red-500">{imageError}</p>}
           </div>
 
           <div className="flex flex-col gap-4">
@@ -156,7 +137,7 @@ export function MyEditPage() {
                 autoComplete="nickname"
                 value={nickname}
                 onChange={(e) => handleChangeNickname(e.target.value)}
-                disabled={nicknameCheck.isChecking}
+                disabled={nicknameCheck.isChecking || updateMeMutation.isPending}
                 aria-invalid={showNicknameError}
                 aria-describedby={showNicknameError ? "nickname-message" : undefined}
                 className={formInputClassName}

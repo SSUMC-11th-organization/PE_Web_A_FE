@@ -1,17 +1,18 @@
-import { useQueries } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { getMovieDetail } from "../../api/movies/get-movie-detail";
 import MovieGrid from "../../components/movies/movie-grid";
 import Pagination from "../../components/movies/pagination";
 import { ProfileAvatar } from "../../components/me/profile-avatar";
+import { meQueryOptions } from "../../queries/me-query";
 import { useBookmarkStore } from "../../stores/bookmark-store";
-import { useMeStore } from "../../stores/me-store";
 
 const BOOKMARKS_PER_PAGE = 10;
 
 export function MyPage() {
-  const profile = useMeStore((state) => state.profile);
+  // 헤더와 같은 query key라 이미 받은 내 정보 캐시를 그대로 써요.
+  const meQuery = useQuery(meQueryOptions);
   const bookmarkedMovieIds = useBookmarkStore((state) => state.bookmarkedMovieIds);
   const [page, setPage] = useState(1);
 
@@ -91,17 +92,25 @@ export function MyPage() {
       <section className="border-b border-border py-6">
         <h2 className="text-base font-bold">기본 정보</h2>
         <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-4">
-          <ProfileAvatar imageUrl={profile.profileImageUrl} className="size-16" />
-          <dl className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <dt className="text-xs text-muted">닉네임</dt>
-              <dd className="mt-1 font-bold text-text">{profile.nickname}</dd>
-            </div>
-            <div>
-              <dt className="text-xs text-muted">이메일</dt>
-              <dd className="mt-1 font-bold break-all text-text">{profile.email}</dd>
-            </div>
-          </dl>
+          <ProfileAvatar imageUrl={null} className="size-16" />
+          {meQuery.isPending ? (
+            <p className="text-sm text-muted">내 정보를 불러오는 중이에요.</p>
+          ) : meQuery.isError ? (
+            <p className="text-sm text-red-500">내 정보를 불러오지 못했어요.</p>
+          ) : (
+            <dl className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <dt className="text-xs text-muted">닉네임</dt>
+                <dd className="mt-1 font-bold text-text">{meQuery.data.nickname}</dd>
+              </div>
+              <div>
+                <dt className="text-xs text-muted">이메일</dt>
+                <dd className="mt-1 font-bold break-all text-text">
+                  {meQuery.data.email}
+                </dd>
+              </div>
+            </dl>
+          )}
         </div>
       </section>
 
