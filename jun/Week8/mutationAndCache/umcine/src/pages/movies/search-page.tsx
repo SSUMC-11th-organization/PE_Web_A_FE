@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useState, type SubmitEvent } from "react";
 import type { TmdbMovieListItem } from "../../api/movies/models";
 import { searchMovies } from "../../api/movies/search-movies";
-import { useBookmarkStore } from "../../stores/bookmark-store";
+import { useIsFavoriteInList } from "../../hooks/use-favorite-queries";
+import { useToggleFavoriteMutation } from "../../hooks/use-toggle-favorite-mutation";
 import { cn } from "../../utils/cn";
 import { getTmdbPosterUrl } from "../../utils/movies/tmdb-image";
 
@@ -154,10 +155,9 @@ function StatusMessage({ title, description }: StatusMessageProps) {
 }
 
 function SearchResultItem({ movie }: { movie: TmdbMovieListItem }) {
-  const isBookmarked = useBookmarkStore((state) =>
-    state.bookmarkedMovieIds.includes(movie.id),
-  );
-  const toggleBookmark = useBookmarkStore((state) => state.toggleBookmark);
+  // 영화 카드와 같은 즐겨찾기 목록 캐시를 함께 읽어요.
+  const isBookmarked = useIsFavoriteInList(movie.id);
+  const { toggleFavorite, isPending } = useToggleFavoriteMutation();
   const posterUrl = getTmdbPosterUrl(movie.poster_path);
 
   return (
@@ -199,8 +199,9 @@ function SearchResultItem({ movie }: { movie: TmdbMovieListItem }) {
           <button
             type="button"
             aria-pressed={isBookmarked}
-            onClick={() => toggleBookmark(movie.id)}
-            className="text-xs font-semibold text-sub hover:underline"
+            disabled={isPending}
+            onClick={() => toggleFavorite(movie.id, isBookmarked)}
+            className="text-xs font-semibold text-sub hover:underline disabled:opacity-40"
           >
             {isBookmarked ? "북마크 해제" : "북마크 추가"}
           </button>

@@ -5,15 +5,19 @@ import { getMovieDetail } from "../../api/movies/get-movie-detail";
 import MovieGrid from "../../components/movies/movie-grid";
 import Pagination from "../../components/movies/pagination";
 import { ProfileAvatar } from "../../components/me/profile-avatar";
+import { useFavoritesQuery } from "../../hooks/use-favorite-queries";
 import { meQueryOptions } from "../../queries/me-query";
-import { useBookmarkStore } from "../../stores/bookmark-store";
 
 const BOOKMARKS_PER_PAGE = 10;
 
 export function MyPage() {
   // 헤더와 같은 query key라 이미 받은 내 정보 캐시를 그대로 써요.
   const meQuery = useQuery(meQueryOptions);
-  const bookmarkedMovieIds = useBookmarkStore((state) => state.bookmarkedMovieIds);
+  // 즐겨찾기 목록은 서버(GET /favorites)에서 받아요. 목록은 최신순이에요.
+  const favoritesQuery = useFavoritesQuery();
+  const bookmarkedMovieIds = (favoritesQuery.data ?? []).map(
+    (favorite) => favorite.movieId,
+  );
   const [page, setPage] = useState(1);
 
   const totalPages = Math.max(
@@ -41,6 +45,22 @@ export function MyPage() {
   const movies = movieQueries.flatMap((query) => (query.data ? [query.data] : []));
 
   function renderBookmarks() {
+    if (favoritesQuery.isPending) {
+      return (
+        <p className="py-16 text-center text-sm text-muted">
+          즐겨찾기 목록을 불러오는 중이에요.
+        </p>
+      );
+    }
+
+    if (favoritesQuery.isError) {
+      return (
+        <p className="py-16 text-center text-sm text-red-500">
+          즐겨찾기 목록을 불러오지 못했어요.
+        </p>
+      );
+    }
+
     if (bookmarkedMovieIds.length === 0) {
       return (
         <div className="flex flex-col items-center gap-3 py-16 text-center">

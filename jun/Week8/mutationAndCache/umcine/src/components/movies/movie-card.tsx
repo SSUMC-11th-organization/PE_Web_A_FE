@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import type { TmdbMovie } from "../../api/movies/models";
-import { useBookmarkStore } from "../../stores/bookmark-store";
+import { useIsFavoriteInList } from "../../hooks/use-favorite-queries";
+import { useToggleFavoriteMutation } from "../../hooks/use-toggle-favorite-mutation";
 import { cn } from "../../utils/cn";
 import { getTmdbPosterUrl } from "../../utils/movies/tmdb-image";
 
@@ -9,10 +10,9 @@ interface MovieCardProps {
 }
 
 export default function MovieCard({ movie }: MovieCardProps) {
-  const isBookmarked = useBookmarkStore((state) =>
-    state.bookmarkedMovieIds.includes(movie.id),
-  );
-  const toggleBookmark = useBookmarkStore((state) => state.toggleBookmark);
+  // 즐겨찾기 여부는 서버의 내 즐겨찾기 목록 캐시에서 읽어요.
+  const isBookmarked = useIsFavoriteInList(movie.id);
+  const { toggleFavorite, isPending } = useToggleFavoriteMutation();
   const bookmarkIcon = isBookmarked
     ? "/icons/bookmark.svg"
     : "/icons/bookmark-outline.svg";
@@ -53,7 +53,8 @@ export default function MovieCard({ movie }: MovieCardProps) {
         )}
         aria-pressed={isBookmarked}
         aria-label={isBookmarked ? "북마크 해제" : "북마크 추가"}
-        onClick={() => toggleBookmark(movie.id)}
+        disabled={isPending}
+        onClick={() => toggleFavorite(movie.id, isBookmarked)}
       >
         <img src={bookmarkIcon} alt="" className="size-[15px] invert" />
       </button>

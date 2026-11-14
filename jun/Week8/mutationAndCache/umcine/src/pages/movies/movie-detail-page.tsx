@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useState, type SubmitEvent } from "react";
 import { getMovieDetail } from "../../api/movies/get-movie-detail";
 import type { TmdbMovieDetail } from "../../api/movies/models";
-import { useBookmarkStore } from "../../stores/bookmark-store";
+import { useFavoriteStatusQuery } from "../../hooks/use-favorite-queries";
+import { useToggleFavoriteMutation } from "../../hooks/use-toggle-favorite-mutation";
 import { cn } from "../../utils/cn";
 import { formatRuntime } from "../../utils/movies/format-runtime";
 import { getMovieDetailErrorMessage } from "../../utils/movies/get-movie-detail-error-message";
@@ -67,10 +68,10 @@ function DetailStatus({ title, showBackLink = false }: DetailStatusProps) {
 }
 
 function MovieDetail({ movie }: { movie: TmdbMovieDetail }) {
-  const isBookmarked = useBookmarkStore((state) =>
-    state.bookmarkedMovieIds.includes(movie.id),
-  );
-  const toggleBookmark = useBookmarkStore((state) => state.toggleBookmark);
+  // 상세에서는 이 영화 하나의 즐겨찾기 여부를 GET /favorites/{movieId}로 확인해요.
+  const favoriteStatus = useFavoriteStatusQuery(movie.id);
+  const isBookmarked = favoriteStatus.isFavorite;
+  const { toggleFavorite, isPending: isFavoritePending } = useToggleFavoriteMutation();
   const posterUrl = getTmdbPosterUrl(movie.poster_path);
   const backdropUrl = getTmdbBackdropUrl(movie.backdrop_path);
   const [rating, setRating] = useState(0);
@@ -140,9 +141,10 @@ function MovieDetail({ movie }: { movie: TmdbMovieDetail }) {
             <button
               type="button"
               aria-pressed={isBookmarked}
-              onClick={() => toggleBookmark(movie.id)}
+              disabled={favoriteStatus.isLoading || isFavoritePending}
+              onClick={() => toggleFavorite(movie.id, isBookmarked)}
               className={cn(
-                "mt-2 flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-semibold text-white transition-[background-color,filter] duration-200 ease-in-out hover:brightness-92",
+                "mt-2 flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-semibold text-white transition-[background-color,filter,opacity] duration-200 ease-in-out hover:brightness-92 disabled:opacity-60",
                 isBookmarked ? "bg-text" : "bg-accent",
               )}
             >
