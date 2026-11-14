@@ -1,4 +1,7 @@
+import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "@tanstack/react-router";
+import { meQueryOptions } from "../../queries/me-query";
+import { useAuthStore } from "../../stores/auth-store";
 import { cn } from "../../utils/cn";
 
 const NAV_ITEMS = [
@@ -20,8 +23,17 @@ const NAV_ITEMS = [
   },
 ] as const;
 
+const HEADER_BUTTON_CLASS_NAME =
+  "rounded-lg bg-accent px-[18px] py-[9px] text-sm font-semibold text-white transition-[filter] duration-200 ease-in-out hover:brightness-92";
+
 export function Header() {
   const pathname = useLocation({ select: (location) => location.pathname });
+  const accessToken = useAuthStore((state) => state.accessToken);
+  // 토큰이 있을 때만 내 정보를 조회해요. 401이면 토큰이 비워져 로그인 링크로 바뀌어요.
+  const meQuery = useQuery({
+    ...meQueryOptions,
+    enabled: Boolean(accessToken),
+  });
 
   return (
     <header className="flex items-center justify-between border-b border-border bg-white px-5 py-3.5 sm:px-12 xl:px-20">
@@ -66,13 +78,22 @@ export function Header() {
         >
           <img src="/icons/search.svg" alt="" className="size-[18px] opacity-70" />
         </Link>
-        {/* 로그인 상태 관리는 8주차에 추가해요. 로그인하면 "마이페이지" 버튼으로 바뀌어요. */}
-        <Link
-          to="/login"
-          className="rounded-lg bg-accent px-[18px] py-[9px] text-sm font-semibold text-white transition-[filter] duration-200 ease-in-out hover:brightness-92"
-        >
-          로그인
-        </Link>
+        {/* 토큰이 없으면 로그인, 첫 조회 중이면 로딩, 그 외에는 마이페이지를 보여줘요. */}
+        {!accessToken ? (
+          <Link to="/login" className={HEADER_BUTTON_CLASS_NAME}>
+            로그인
+          </Link>
+        ) : meQuery.isLoading ? (
+          <span
+            role="status"
+            aria-label="내 정보를 불러오는 중"
+            className="h-10 w-24 animate-pulse rounded-lg bg-gray-200"
+          />
+        ) : (
+          <Link to="/me" className={HEADER_BUTTON_CLASS_NAME}>
+            마이페이지
+          </Link>
+        )}
       </div>
     </header>
   );

@@ -5,6 +5,10 @@ import {
   formInputClassName,
   formSubmitButtonClassName,
 } from "../../components/auth/form-field";
+import { useLoginMutation } from "../../hooks/use-login-mutation";
+
+// 이메일 형식 검사
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const DEFAULT_FORM = {
   email: "",
@@ -16,8 +20,9 @@ type LoginFormKey = keyof typeof DEFAULT_FORM;
 export function LoginPage() {
   const [form, setForm] = useState(DEFAULT_FORM);
 
-  // 로그인 API는 8주차에 연결하므로, 이번에는 두 칸이 모두 채워졌는지만 확인해요.
-  const canSubmit = form.email.trim().length > 0 && form.password.length > 0;
+  const loginMutation = useLoginMutation();
+  // 이메일 형식이 맞고 비밀번호를 입력했을 때만 제출할 수 있어요.
+  const canSubmit = EMAIL_REGEX.test(form.email.trim()) && form.password.length > 0;
 
   const handleChangeField = (key: LoginFormKey, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -25,9 +30,12 @@ export function LoginPage() {
 
   const handleSubmit = (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!canSubmit) return;
+    if (!canSubmit || loginMutation.isPending) return;
 
-    // 8주차에서 로그인 API 요청 추가
+    loginMutation.mutate({
+      email: form.email.trim(),
+      password: form.password,
+    });
   };
 
   return (
@@ -66,10 +74,10 @@ export function LoginPage() {
 
           <button
             type="submit"
-            disabled={!canSubmit}
+            disabled={!canSubmit || loginMutation.isPending}
             className={`mt-5 ${formSubmitButtonClassName}`}
           >
-            로그인
+            {loginMutation.isPending ? "로그인 중" : "로그인"}
           </button>
         </form>
 
