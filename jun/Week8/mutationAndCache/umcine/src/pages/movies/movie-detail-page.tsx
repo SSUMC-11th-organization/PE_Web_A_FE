@@ -1,16 +1,14 @@
 import { Link, useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState, type SubmitEvent } from "react";
 import { getMovieDetail } from "../../api/movies/get-movie-detail";
 import type { TmdbMovieDetail } from "../../api/movies/models";
+import { MyRatingSection } from "../../components/movies/my-rating-section";
 import { useFavoriteStatusQuery } from "../../hooks/use-favorite-queries";
 import { useToggleFavoriteMutation } from "../../hooks/use-toggle-favorite-mutation";
 import { cn } from "../../utils/cn";
 import { formatRuntime } from "../../utils/movies/format-runtime";
 import { getMovieDetailErrorMessage } from "../../utils/movies/get-movie-detail-error-message";
 import { getTmdbBackdropUrl, getTmdbPosterUrl } from "../../utils/movies/tmdb-image";
-
-const RATINGS = [1, 2, 3, 4, 5];
 
 export function MovieDetailPage() {
   const { movieId: movieIdParam } = useParams({ from: "/movies/$movieId" });
@@ -45,7 +43,7 @@ export function MovieDetailPage() {
 
   const movie = movieDetailQuery.data;
 
-  // 다른 영화로 이동하면 평점 상태를 초기화해요.
+  // 다른 영화로 이동하면 즐겨찾기·평점 상태를 새로 시작해요.
   return <MovieDetail key={movie.id} movie={movie} />;
 }
 
@@ -74,12 +72,6 @@ function MovieDetail({ movie }: { movie: TmdbMovieDetail }) {
   const { toggleFavorite, isPending: isFavoritePending } = useToggleFavoriteMutation();
   const posterUrl = getTmdbPosterUrl(movie.poster_path);
   const backdropUrl = getTmdbBackdropUrl(movie.backdrop_path);
-  const [rating, setRating] = useState(0);
-  const [review, setReview] = useState("");
-
-  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
-    event.preventDefault();
-  }
 
   return (
     <main className="flex-1">
@@ -159,57 +151,7 @@ function MovieDetail({ movie }: { movie: TmdbMovieDetail }) {
         </section>
 
         <aside className="w-full lg:w-[360px] lg:shrink-0 lg:border-l lg:border-border lg:pl-8">
-          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-            <div>
-              <h2 className="text-base font-bold">내 평점</h2>
-              <p className="text-xs text-muted">별점은 필수, 후기는 선택이에요.</p>
-            </div>
-
-            <div className="flex gap-2" role="radiogroup" aria-label="별점">
-              {RATINGS.map((score) => {
-                const isFilled = score <= rating;
-
-                return (
-                  <button
-                    key={score}
-                    type="button"
-                    role="radio"
-                    aria-checked={score === rating}
-                    aria-label={`${score}점`}
-                    onClick={() => setRating(score)}
-                    className={cn(
-                      "flex size-8 items-center justify-center rounded-md border transition-colors duration-150",
-                      isFilled
-                        ? "border-accent bg-accent"
-                        : "border-border bg-white hover:bg-surface-hover",
-                    )}
-                  >
-                    <img
-                      src={isFilled ? "/icons/star.svg" : "/icons/star-outline.svg"}
-                      alt=""
-                      className={cn("size-4", isFilled ? "invert" : "opacity-60")}
-                    />
-                  </button>
-                );
-              })}
-            </div>
-
-            <textarea
-              value={review}
-              onChange={(event) => setReview(event.target.value)}
-              placeholder="영화를 보고 느낀 점을 남겨보세요."
-              aria-label="후기"
-              className="h-[104px] resize-none rounded-lg border border-border bg-white p-3 text-sm outline-none placeholder:text-muted focus:border-accent"
-            />
-
-            <button
-              type="submit"
-              disabled={rating === 0}
-              className="rounded-lg bg-text py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
-            >
-              평점 저장
-            </button>
-          </form>
+          <MyRatingSection movieId={movie.id} />
         </aside>
       </div>
     </main>
