@@ -1,0 +1,28 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
+import { login } from "../api/auth/login";
+import { favoriteKeys } from "../queries/favorite-queries";
+import { meQueryKey } from "../queries/me-query";
+import { useAuthStore } from "../stores/auth-store";
+
+export function useLoginMutation() {
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const setAccessToken = useAuthStore((state) => state.setAccessToken);
+
+  return useMutation({
+    mutationFn: login,
+    onSuccess: (response) => {
+      setAccessToken(response.result.accessToken);
+      alert("로그인에 성공했어요.");
+      // 로그인한 사용자가 바뀌었으므로 내 정보를 stale로 만들어 다시 조회해요.
+      queryClient.invalidateQueries({ queryKey: meQueryKey });
+      // 이전 사용자의 즐겨찾기 캐시가 보이지 않도록 지워요.
+      queryClient.removeQueries({ queryKey: favoriteKeys.all });
+      navigate({ to: "/" });
+    },
+    onError: () => {
+      alert("로그인에 실패했어요. 다시 시도해 주세요.");
+    },
+  });
+}
